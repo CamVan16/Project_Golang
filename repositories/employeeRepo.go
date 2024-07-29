@@ -12,6 +12,7 @@ type EmployeeRepository interface {
 	FindAll() ([]models.Employee, error)
 	Update(employee *models.Employee) error
 	Delete(id uint) error
+	FindByPhonePass(phone, pass string) (models.Employee, error)
 }
 
 type employeeRepository struct {
@@ -44,4 +45,10 @@ func (r *employeeRepository) Update(employee *models.Employee) error {
 
 func (r *employeeRepository) Delete(id uint) error {
 	return r.db.Delete(&models.Employee{}, id).Error
+}
+
+func (r *employeeRepository) FindByPhonePass(phone, pass string) (models.Employee, error) {
+	var employee models.Employee
+	err := r.db.Where("Phone = ? AND Password = ?", phone, pass).First(&employee).Error
+	return employee, err
 }

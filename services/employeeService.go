@@ -11,6 +11,7 @@ type EmployeeService interface {
 	GetAllEmployees() ([]models.Employee, error)
 	UpdateEmployee(employee *models.Employee) error
 	DeleteEmployee(id uint) error
+	GetEmployeeByPhonePass(phone, pass string) (models.Employee, error)
 }
 
 type employeeService struct {
@@ -39,4 +40,7 @@ func (s *employeeService) UpdateEmployee(employee *models.Employee) error {
 
 func (s *employeeService) DeleteEmployee(id uint) error {
 	return s.repository.Delete(id)
+}
+func (s *employeeService) GetEmployeeByPhonePass(phone, pass string) (models.Employee, error) {
+	return s.repository.FindByPhonePass(phone, pass)
 }

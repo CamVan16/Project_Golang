@@ -61,7 +61,7 @@ func (ctrl *EmployeeController) UpdateEmployee(c *gin.Context) {
 	}
 
 	id, _ := strconv.Atoi(c.Param("id"))
-	employee.ID = uint(id)
+	employee.IDEm = uint(id)
 	if err := ctrl.service.UpdateEmployee(&employee); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

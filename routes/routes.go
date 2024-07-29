@@ -2,9 +2,10 @@ package routes
 
 import (
 	"camvan/connection"
-	"camvan/controllers"
+	"camvan/middleware"
 	"camvan/repositories"
 	"camvan/services"
+	"camvan/wire"
 
 	"github.com/gin-gonic/gin"
 )
@@ -13,35 +14,43 @@ func SetupRouter() *gin.Engine {
 	router := gin.Default()
 	db := connection.DB
 
-	departmentRepository := repositories.NewDepartmentRepository(db)
-	departmentService := services.NewDepartmentService(departmentRepository)
+	var subDeptService services.SubDepartmentService
+	var employeeRepo repositories.EmployeeRepository
 
-	subDepartmentRepository := repositories.NewSubDepartmentRepository(db)
-	subDepartmentService := services.NewSubDepartmentService(subDepartmentRepository)
-	subDepartmentController := controllers.NewSubDepartmentController(subDepartmentService)
-	departmentController := controllers.NewDepartmentController(departmentService, subDepartmentService)
-
-	employeeRepository := repositories.NewEmployeeRepository(db)
-	employeeService := services.NewEmployeeService(employeeRepository)
-	employeeController := controllers.NewEmployeeController(employeeService)
+	subDepartmentController := wire.InitializeSubDepartment(db)
+	departmentController := wire.InitializeDepartment(db, subDeptService)
+	employeeController := wire.InitializeEmployee(db)
+	userController := wire.InitializeUser(db, employeeRepo)
 
 	router.POST("/api/departments", departmentController.CreateDepartment)
 	router.GET("/api/departments", departmentController.GetAllDepartments)
 	router.GET("/api/departments/:id", departmentController.GetDepartmentByID)
-	router.PUT("/api/departments/:id", departmentController.UpdateDepartment)
-	router.DELETE("/api/departments/:id", departmentController.DeleteDepartment)
 
 	router.POST("/api/sub_departments", subDepartmentController.CreateSubDepartment)
 	router.GET("/api/sub_departments", subDepartmentController.GetAllSubDepartments)
 	router.GET("/api/sub_departments/:id", subDepartmentController.GetSubDepartmentByID)
-	router.PUT("/api/sub_departments/:id", subDepartmentController.UpdateSubDepartment)
-	router.DELETE("/api/sub_departments/:id", subDepartmentController.DeleteSubDepartment)
 
 	router.POST("/api/employees", employeeController.CreateEmployee)
 	router.GET("/api/employees", employeeController.GetAllEmployees)
 	router.GET("/api/employees/:id", employeeController.GetEmployeeByID)
-	router.PUT("/api/employees/:id", employeeController.UpdateEmployee)
-	router.DELETE("/api/employees/:id", employeeController.DeleteEmployee)
 
+	router.POST("/api/users", userController.SignUpUser)
+	router.POST("/api/users/signin", userController.SignInUser)
+	router.POST("/api/users/refresh", userController.RefreshToken)
+
+	authRoutes := router.Group("/")
+	authRoutes.Use(middleware.AuthMiddleware())
+	authRoutes.PUT("/api/departments/:id", departmentController.UpdateDepartment)
+	authRoutes.DELETE("/api/departments/:id", departmentController.DeleteDepartment)
+	authRoutes.PUT("/api/sub_departments/:id", subDepartmentController.UpdateSubDepartment)
+	authRoutes.DELETE("/api/sub_departments/:id", subDepartmentController.DeleteSubDepartment)
+	authRoutes.PUT("/api/employees/:id", employeeController.UpdateEmployee)
+	authRoutes.DELETE("/api/employees/:id", employeeController.DeleteEmployee)
+	authRoutes.GET("/api/users", userController.GetAllUsers)
+	authRoutes.DELETE("/api/user/:id", userController.DeleteUser)
 	return router
+
+	// employeeRepository := repositories.NewEmployeeRepository(db)
+	// employeeService := services.NewEmployeeService(employeeRepository)
+	// employeeController := controllers.NewEmployeeController(employeeService)
 }
